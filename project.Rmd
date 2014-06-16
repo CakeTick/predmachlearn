@@ -1,0 +1,150 @@
+Class Project
+========================================================
+
+## Introduction
+
+Using raw data collected from performing a weight lifting exercise, the aim was to build a model and classifier to accurately predict how well new instances of the exercise were performed with new unlabelled raw data. The raw data was sourced from a collection of sensors when performing the weight lifting exercise. These sensor readings comprise of the feature set under examination.
+
+## Data preparation
+
+The provided raw data included a large number of parameters to be explored for input candidates. Upon inspection of the data, it was found that approximately two thirds of the data was empty, or logically irrelevant to the design goals. Since the study is HAR (Human Activity Recognition) classification using sensors, it makes sense to remove all variables that are not sensor data. The empty parameters were quickly discounted to reduce the parameter space from 158 to just 52. This reduced feature set made analysis a little easier.
+
+## Analysis
+
+Simple visual inspection of the data reveals no clear linear signal. The data does appear to form clusters (see figure below), thus KNN or Random Forests modelling seem like logical places to investigate.
+
+```{r}
+library(lattice); library(gplots); library(ggplot2); library(caret); library(ROCR);
+set.seed(1);
+raw = read.csv(file = "pml_training.csv", header = TRUE);
+raw_clean = raw[, c("roll_belt", "pitch_forearm", "yaw_belt", "magnet_dumbbell_z", "magnet_dumbbell_y", "pitch_belt", "roll_forearm", "accel_dumbbell_y", "roll_dumbbell", "accel_forearm_x", "magnet_belt_z", "magnet_dumbbell_x", "accel_belt_z", "total_accel_dumbbell", "accel_dumbbell_z", "magnet_forearm_z", "magnet_belt_y", "gyros_belt_z", "yaw_arm", "magnet_belt_x", "classe")]; ## Only, store the columns of interest.
+featurePlot(x = raw_clean[, 1:20], y = raw_clean$classe, plot = "pairs");
+```
+
+Using the remaining features (52), a Random Forest model was trained with a small number of Cross Validation folds for a quick and dirty model as a starting place.
+
+```{r}
+raw_clean = raw[, c("roll_belt", "pitch_belt", "yaw_belt", "total_accel_belt", "gyros_belt_x", "gyros_belt_y", "gyros_belt_z", "accel_belt_x", "accel_belt_y", "accel_belt_z", "magnet_belt_x", "magnet_belt_y", "magnet_belt_z", "roll_arm", "pitch_arm", "yaw_arm", "total_accel_arm", "gyros_arm_x", "gyros_arm_y", "gyros_arm_z", "accel_arm_x", "accel_arm_y", "accel_arm_z", "magnet_arm_x", "magnet_arm_y", "magnet_arm_z", "roll_dumbbell", "pitch_dumbbell", "yaw_dumbbell", "total_accel_dumbbell", "gyros_dumbbell_x", "gyros_dumbbell_y", "gyros_dumbbell_z", "accel_dumbbell_x", "accel_dumbbell_y", "accel_dumbbell_z", "magnet_dumbbell_x", "magnet_dumbbell_y", "magnet_dumbbell_z", "roll_forearm", "pitch_forearm", "yaw_forearm", "total_accel_forearm", "gyros_forearm_x", "gyros_forearm_y", "gyros_forearm_z", "accel_forearm_x", "accel_forearm_y", "accel_forearm_z", "magnet_forearm_x", "magnet_forearm_y", "magnet_forearm_z", "classe")]; ## Only, store the columns of interest.
+split = createDataPartition(y = raw_clean$classe, p = 0.70, list = FALSE);
+split_training = raw_clean[split,];
+split_testing = raw_clean[-split,];
+train_model = train(classe ~ ., method = "rf", data = split_training, trControl = trainControl(method = "cv", number = 2, classProbs = TRUE));
+print(train_model);
+```
+
+The accuracy of this model was surprisingly high at 99% on the reserved test set (even with a low number of cross validation folds).
+
+```{r}
+predict_train_results = predict(train_model, split_testing);
+correct = (split_testing$classe == predict_train_results);
+accuracy = (length(correct[correct == TRUE]) / length(correct)) * 100.0;
+prt = paste("Training accuracy: ", accuracy, "%", sep = "");
+print(prt);
+```
+
+From the resulted model, the top twenty (20) features were found.
+
+```{r}
+print(varImp(train_model, scale = FALSE));
+```
+
+A second model was built using only the top twenty (20) features (from above).
+
+```{r}
+raw_clean = raw[, c("roll_belt", "pitch_forearm", "yaw_belt", "magnet_dumbbell_z", "magnet_dumbbell_y", "pitch_belt", "roll_forearm", "accel_dumbbell_y", "roll_dumbbell", "accel_forearm_x", "magnet_belt_z", "magnet_dumbbell_x", "accel_belt_z", "total_accel_dumbbell", "accel_dumbbell_z", "magnet_forearm_z", "magnet_belt_y", "gyros_belt_z", "yaw_arm", "magnet_belt_x", "classe")]; ## Only, store the columns of interest.
+split <- createDataPartition(y = raw_clean$classe, p = 0.70, list = FALSE);
+split_training <- raw_clean[split,];
+split_testing <- raw_clean[-split,];
+train_model <- train(classe ~ ., method = "rf", data = split_training, trControl = trainControl(method = "cv", number = 2, classProbs = TRUE));
+print(train_model);
+```
+
+```{r}
+predict_train_results = predict(train_model, split_testing);
+correct = (split_testing$classe == predict_train_results);
+accuracy = (length(correct[correct == TRUE]) / length(correct)) * 100.0;
+prt = paste("Training accuracy: ", accuracy, "%", sep = "");
+print(prt);
+```
+
+As expected, this model also exhibited high accuracy at 99% (again, with a low number of cross validation folds).
+Without having specialised domain knowledge on this HAR subject, the initial model using more features was selected in the feature selection process.
+
+Increasing the number of folds did not gain additional accuracy. In the following example, the number of folds was increased to 10. However, since using 2 folds already had a high accuracy of 99%, simply increasing the number of folds was unlikely to increase the accuracy.
+
+```{r}
+raw_clean = raw[, c("roll_belt", "pitch_belt", "yaw_belt", "total_accel_belt", "gyros_belt_x", "gyros_belt_y", "gyros_belt_z", "accel_belt_x", "accel_belt_y", "accel_belt_z", "magnet_belt_x", "magnet_belt_y", "magnet_belt_z", "roll_arm", "pitch_arm", "yaw_arm", "total_accel_arm", "gyros_arm_x", "gyros_arm_y", "gyros_arm_z", "accel_arm_x", "accel_arm_y", "accel_arm_z", "magnet_arm_x", "magnet_arm_y", "magnet_arm_z", "roll_dumbbell", "pitch_dumbbell", "yaw_dumbbell", "total_accel_dumbbell", "gyros_dumbbell_x", "gyros_dumbbell_y", "gyros_dumbbell_z", "accel_dumbbell_x", "accel_dumbbell_y", "accel_dumbbell_z", "magnet_dumbbell_x", "magnet_dumbbell_y", "magnet_dumbbell_z", "roll_forearm", "pitch_forearm", "yaw_forearm", "total_accel_forearm", "gyros_forearm_x", "gyros_forearm_y", "gyros_forearm_z", "accel_forearm_x", "accel_forearm_y", "accel_forearm_z", "magnet_forearm_x", "magnet_forearm_y", "magnet_forearm_z", "classe")]; ## Only, store the columns of interest.
+split = createDataPartition(y = raw_clean$classe, p = 0.70, list = FALSE);
+split_training = raw_clean[split,];
+split_testing = raw_clean[-split,];
+train_model = train(classe ~ ., method = "rf", data = split_training, trControl = trainControl(method = "cv", number = 10, classProbs = TRUE));
+print(train_model);
+```
+
+```{r}
+predict_train_results = predict(train_model, split_testing);
+correct = (split_testing$classe == predict_train_results);
+accuracy = (length(correct[correct == TRUE]) / length(correct)) * 100.0;
+prt = paste("Training accuracy: ", accuracy, "%", sep = "");
+print(prt);
+```
+
+The training accuracy is also supported with the use of confusion matrix calculations.
+
+```{r}
+print(confusionMatrix(predict_train_results, split_testing$classe));
+```
+
+## Results
+The out-of-sampe-error estimation is calculed to be:
+
+```{r}
+prt = paste((1.0 - accuracy) * 100.0, "%", sep = "");
+print(prt);
+```
+
+Using the trained model described in the analysis section, receiver operating characteristic (ROC) curves were prepared. With such high accuracy on the test partition, the ROC curves almost had an area under the curve (AUC) of 1.0.
+
+```{r}
+raw_clean = raw[, c("roll_belt", "pitch_belt", "yaw_belt", "total_accel_belt", "gyros_belt_x", "gyros_belt_y", "gyros_belt_z", "accel_belt_x", "accel_belt_y", "accel_belt_z", "magnet_belt_x", "magnet_belt_y", "magnet_belt_z", "roll_arm", "pitch_arm", "yaw_arm", "total_accel_arm", "gyros_arm_x", "gyros_arm_y", "gyros_arm_z", "accel_arm_x", "accel_arm_y", "accel_arm_z", "magnet_arm_x", "magnet_arm_y", "magnet_arm_z", "roll_dumbbell", "pitch_dumbbell", "yaw_dumbbell", "total_accel_dumbbell", "gyros_dumbbell_x", "gyros_dumbbell_y", "gyros_dumbbell_z", "accel_dumbbell_x", "accel_dumbbell_y", "accel_dumbbell_z", "magnet_dumbbell_x", "magnet_dumbbell_y", "magnet_dumbbell_z", "roll_forearm", "pitch_forearm", "yaw_forearm", "total_accel_forearm", "gyros_forearm_x", "gyros_forearm_y", "gyros_forearm_z", "accel_forearm_x", "accel_forearm_y", "accel_forearm_z", "magnet_forearm_x", "magnet_forearm_y", "magnet_forearm_z", "classe")]; ## Only, store the columns of interest.
+split = createDataPartition(y = raw_clean$classe, p = 0.70, list = FALSE);
+split_training = raw_clean[split,];
+split_testing = raw_clean[-split,];
+train_model = train(classe ~ ., method = "rf", data = split_training, trControl = trainControl(method = "cv", number = 2, classProbs = TRUE));
+predict_train_results = predict(train_model, split_testing, "prob");
+roc_a = data.frame(predict_train_results$A, split_testing$classe == 'A');
+colnames(roc_a) = c("predict", "label");
+roc_b = data.frame(predict_train_results$B, split_testing$classe == 'B');
+colnames(roc_b) = c("predict", "label");
+roc_c = data.frame(predict_train_results$C, split_testing$classe == 'C');
+colnames(roc_c) = c("predict", "label");
+roc_d = data.frame(predict_train_results$D, split_testing$classe == 'D');
+colnames(roc_d) = c("predict", "label");
+roc_e = data.frame(predict_train_results$E, split_testing$classe == 'E');
+colnames(roc_e) = c("predict", "label");
+pred_a = prediction(roc_a$predict, roc_a$label);
+perf_a = performance(pred_a, "tpr", "fpr");
+pred_b = prediction(roc_b$predict, roc_b$label);
+perf_b = performance(pred_b, "tpr", "fpr");
+pred_c = prediction(roc_c$predict, roc_c$label);
+perf_c = performance(pred_c, "tpr", "fpr");
+pred_d = prediction(roc_d$predict, roc_d$label);
+perf_d = performance(pred_d, "tpr", "fpr");
+pred_e = prediction(roc_e$predict, roc_e$label);
+perf_e = performance(pred_e, "tpr", "fpr");
+plot(perf_a);
+title(main = "A", font.main = 4);
+plot(perf_b);
+title(main = "B", font.main = 4);
+plot(perf_c);
+title(main = "C", font.main = 4);
+plot(perf_d);
+title(main = "D", font.main = 4);
+plot(perf_e);
+title(main = "E", font.main = 4);
+```
+
+## Conclusions
+Though a range of experiments it was observed that only a K-fold of 2 was required.
+
+The out-of-sample error is expected to be less than 1.0% on future unlabeled data.
