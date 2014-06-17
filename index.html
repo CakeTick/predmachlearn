@@ -257,8 +257,8 @@ train_model = train(classe ~ ., method = &quot;rf&quot;, data = split_training, 
 
 <pre><code class="r">predict_train_results = predict(train_model, split_testing);
 correct = (split_testing$classe == predict_train_results);
-accuracy = (length(correct[correct == TRUE]) / length(correct)) * 100.0;
-prt = paste(&quot;Training accuracy: &quot;, accuracy, &quot;%&quot;, sep = &quot;&quot;);
+accuracy = length(correct[correct == TRUE]) / length(correct);
+prt = paste(&quot;Training accuracy: &quot;, accuracy * 100.0, &quot;%&quot;, sep = &quot;&quot;);
 print(prt);
 </code></pre>
 
