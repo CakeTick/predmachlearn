@@ -331,8 +331,8 @@ print(train_model);
 
 <pre><code class="r">predict_train_results = predict(train_model, split_testing);
 correct = (split_testing$classe == predict_train_results);
-accuracy = (length(correct[correct == TRUE]) / length(correct)) * 100.0;
-prt = paste(&quot;Training accuracy: &quot;, accuracy, &quot;%&quot;, sep = &quot;&quot;);
+accuracy = length(correct[correct == TRUE]) / length(correct);
+prt = paste(&quot;Training accuracy: &quot;, accuracy * 100.0, &quot;%&quot;, sep = &quot;&quot;);
 print(prt);
 </code></pre>
 
@@ -376,8 +376,8 @@ print(train_model);
 
 <pre><code class="r">predict_train_results = predict(train_model, split_testing);
 correct = (split_testing$classe == predict_train_results);
-accuracy = (length(correct[correct == TRUE]) / length(correct)) * 100.0;
-prt = paste(&quot;Training accuracy: &quot;, accuracy, &quot;%&quot;, sep = &quot;&quot;);
+accuracy = length(correct[correct == TRUE]) / length(correct);
+prt = paste(&quot;Training accuracy: &quot;, accuracy * 100.0, &quot;%&quot;, sep = &quot;&quot;);
 print(prt);
 </code></pre>
 
@@ -430,7 +430,7 @@ print(prt);
 print(prt);
 </code></pre>
 
-<pre><code>## [1] &quot;-9823.53440951572%&quot;
+<pre><code>## [1] &quot;0.764655904842826%&quot;
 </code></pre>
 
 <p>Using the trained model described in the analysis section, receiver operating characteristic (ROC) curves were prepared. With such high accuracy on the test partition, the ROC curves almost had an area under the curve (AUC) of 1.0.</p>

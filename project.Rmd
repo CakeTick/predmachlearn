@@ -62,8 +62,8 @@ print(train_model);
 ```{r}
 predict_train_results = predict(train_model, split_testing);
 correct = (split_testing$classe == predict_train_results);
-accuracy = (length(correct[correct == TRUE]) / length(correct)) * 100.0;
-prt = paste("Training accuracy: ", accuracy, "%", sep = "");
+accuracy = length(correct[correct == TRUE]) / length(correct);
+prt = paste("Training accuracy: ", accuracy * 100.0, "%", sep = "");
 print(prt);
 ```
 
@@ -84,8 +84,8 @@ print(train_model);
 ```{r}
 predict_train_results = predict(train_model, split_testing);
 correct = (split_testing$classe == predict_train_results);
-accuracy = (length(correct[correct == TRUE]) / length(correct)) * 100.0;
-prt = paste("Training accuracy: ", accuracy, "%", sep = "");
+accuracy = length(correct[correct == TRUE]) / length(correct);
+prt = paste("Training accuracy: ", accuracy * 100.0, "%", sep = "");
 print(prt);
 ```
 
